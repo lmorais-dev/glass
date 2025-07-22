@@ -1,0 +1,17 @@
+[workspace]
+resolver = "3"
+members = ["crates/lib/glass-parser"]
+
+[workspace.package]
+description = "Glass is a next-generation blazingly fast RPC framework powered by QUIC"
+edition = "2024"
+rust-version = "1.88.0"
+authors = ["Lucas Morais <lucas@lmorais.dev>"]
+readme = "README.md"
+publish = true
+repository = "https://github.com/lmorais-dev/glass"
+homepage = "https://glass.lmorais.dev"
+documentation = "https://glass.lmorais.dev/docs"
+license = "Apache-2.0 OR MIT"
+categories = ["asynchronous", "network-programming", "rust-patterns", "wasm", "web-programming"]
+keywords = ["rpc", "quic", "web-transport", "idl", "api"]
