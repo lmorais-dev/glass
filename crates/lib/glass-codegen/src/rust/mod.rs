@@ -1,4 +1,3 @@
-use crate::project::Project;
 use crate::{CodeGenerator, GeneratorOutput};
 use glass_parser::ast::{
     Definition, EnumDef, PrimitiveType, Program, SchemaDef, SchemaRef, Type, TypeWithSpan,
@@ -505,16 +504,10 @@ impl<'a> RustGenerator<'a> {
 impl<'a> CodeGenerator for RustGenerator<'a> {
     type Error = CodeGeneratorError;
 
-    fn generate(&self, project: &Project) -> Result<Vec<GeneratorOutput>, Self::Error> {
-        let _generator_config = project.generator_config.rust.as_ref().ok_or_else(|| {
-            CodeGeneratorError::InvalidConfig {
-                message: "No Rust generator configuration found".to_string(),
-            }
-        })?;
-
+    fn generate(&self) -> Result<Vec<GeneratorOutput>, Self::Error> {
         let mut outputs = Vec::new();
 
-        // Build enhanced type location map using TypeTree
+        // Build an enhanced type location map using TypeTree
         let type_locations = self.build_type_location_map();
 
         // Group programs efficiently using TypeTree

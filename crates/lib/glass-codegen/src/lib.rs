@@ -1,7 +1,5 @@
 use std::path::PathBuf;
-use crate::project::Project;
 
-pub mod project;
 pub mod rust;
 mod error;
 
@@ -42,7 +40,7 @@ pub struct GeneratorOutput {
 /// impl CodeGenerator for MyGenerator {
 ///     type Error = MyError;
 ///
-///     fn generate(&self, project: &Project) -> Result<Vec<GeneratorOutput>, Self::Error> {
+///     fn generate(&self) -> Result<Vec<GeneratorOutput>, Self::Error> {
 ///         // Generate code here
 ///         Ok(vec![])
 ///     }
@@ -71,7 +69,7 @@ pub trait CodeGenerator {
     /// # Returns
     ///
     /// A list of generated files or an error if code generation fails.
-    fn generate(&self, project: &Project) -> Result<Vec<GeneratorOutput>, Self::Error>;
+    fn generate(&self) -> Result<Vec<GeneratorOutput>, Self::Error>;
 
     /// Get the name of this generator
     ///
