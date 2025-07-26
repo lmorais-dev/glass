@@ -21,5 +21,8 @@ pub enum ParserError {
     InvalidSyntax(String),
 
     #[error("Schema reference error: {details}")]
-    SchemaReferenceError { details: String, reference: Option<String> },
+    SchemaReferenceError {
+        details: String,
+        reference: Option<String>,
+    },
 }

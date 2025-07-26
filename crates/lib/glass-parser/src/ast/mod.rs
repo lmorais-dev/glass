@@ -15,7 +15,7 @@ impl Span {
         Self { start, end }
     }
 
-    /// Creates a dummy span (0,0)-(0,0)
+    /// Creates a fake span (0,0)-(0,0)
     pub fn dummy() -> Self {
         Self::new((0, 0), (0, 0))
     }
