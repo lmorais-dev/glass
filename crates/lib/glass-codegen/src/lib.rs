@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
-pub mod rust;
 mod error;
+pub mod rust;
 
 #[derive(Clone)]
 pub struct GeneratorOutput {
@@ -18,7 +18,6 @@ pub struct GeneratorOutput {
 ///
 /// ```rust,no_run
 /// use glass_codegen::CodeGenerator;
-/// use glass_codegen::project::Project;
 /// use glass_codegen::GeneratorOutput;
 /// use std::error::Error;
 /// use std::fmt;

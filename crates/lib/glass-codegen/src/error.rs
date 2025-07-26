@@ -11,7 +11,10 @@ pub enum CodeGeneratorError {
     TypeNotFound { name: String },
 
     #[error("Ambiguous type reference '{name}': matches {candidates:?}")]
-    AmbiguousTypeReference { name: String, candidates: Vec<String> },
+    AmbiguousTypeReference {
+        name: String,
+        candidates: Vec<String>,
+    },
 
     #[error("Invalid type reference: {reference}")]
     InvalidTypeReference { reference: String },

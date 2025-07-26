@@ -52,10 +52,7 @@ fn create_test_enum_program(package_name: &str, enum_name: &str, variants: Vec<&
         span: Span::dummy(),
     });
 
-    let enum_variants = variants
-        .into_iter()
-        .map(|name| name.to_string())
-        .collect();
+    let enum_variants = variants.into_iter().map(|name| name.to_string()).collect();
 
     let enum_def = EnumDef {
         name: enum_name.to_string(),
