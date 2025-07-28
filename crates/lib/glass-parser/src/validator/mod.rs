@@ -35,7 +35,7 @@ impl ValidatedFile {
     fn build_schema_map(schemas: &[Schema]) -> ValidatorResult<HashMap<SchemaRef, Schema>> {
         let mut schema_map = HashMap::with_capacity(schemas.len());
         for schema in schemas {
-            if schema_map
+            if !schema_map
                 .keys()
                 .filter(|&key| key == &SchemaRef(schema.name.clone()))
                 .collect::<Vec<_>>()
@@ -66,7 +66,7 @@ impl ValidatedFile {
     ) -> ValidatorResult<HashMap<String, Interface>> {
         let mut interface_map = HashMap::with_capacity(interfaces.len());
         for interface in interfaces {
-            if interface_map
+            if !interface_map
                 .keys()
                 .filter(|&key| key == &interface.name)
                 .collect::<Vec<_>>()
@@ -119,7 +119,7 @@ impl ValidatedFile {
         match ty {
             Type::Primitive(_) => Ok(()),
             Type::Schema(schema_ref) => {
-                if !schema_map
+                if schema_map
                     .keys()
                     .filter(|&key| key == schema_ref)
                     .collect::<Vec<_>>()
@@ -154,5 +154,98 @@ impl ValidatedFile {
             FunctionReturn::Stream(return_type) => Self::validate_type(return_type, schema_map),
             FunctionReturn::Simple(return_type) => Self::validate_type(return_type, schema_map),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::prelude::*;
+    use crate::validator::{ValidatedFile, ValidatorError};
+    use std::fs::File as StdFile;
+    use std::io::Write;
+    use std::path::PathBuf;
+    use tempfile::Builder;
+
+    /// Helper to create a named temporary file with specific content.
+    fn create_temp_file(prefix: &str, content: &str) -> (PathBuf, impl FnOnce()) {
+        let temp_dir = Builder::new().prefix(prefix).tempdir().unwrap();
+        let file_path = temp_dir.path().join("test.glass");
+        let mut file = StdFile::create(&file_path).unwrap();
+        file.write_fmt(format_args!("{content}")).unwrap();
+
+        let path_buf = file_path.to_path_buf();
+        let cleanup = move || temp_dir.close().unwrap();
+
+        (path_buf, cleanup)
+    }
+
+    #[test]
+    fn test_validate_success() {
+        let content = r#"
+            schema User {
+                id: u64;
+            }
+
+            interface Greeter {
+                fn say_hello(User) -> string;
+            }
+        "#;
+        let (path, cleanup) = create_temp_file("validate_success", content);
+        let mut file = File::try_new(path).unwrap();
+        file.try_parse().unwrap();
+
+        let result = ValidatedFile::validate(file);
+        assert!(result.is_ok());
+
+        cleanup();
+    }
+
+    #[test]
+    fn test_validate_duplicate_schema() {
+        let content = r#"
+            schema User { id: u64; }
+            schema User { name: string; }
+        "#;
+        let (path, cleanup) = create_temp_file("duplicate_schema", content);
+        let mut file = File::try_new(path).unwrap();
+        file.try_parse().unwrap();
+
+        let result = ValidatedFile::validate(file);
+        assert!(matches!(result, Err(ValidatorError::DuplicateSchema(_))));
+
+        cleanup();
+    }
+
+    #[test]
+    fn test_validate_duplicate_interface() {
+        let content = r#"
+            interface Greeter { fn a(string); }
+            interface Greeter { fn b(string); }
+        "#;
+        let (path, cleanup) = create_temp_file("duplicate_interface", content);
+        let mut file = File::try_new(path).unwrap();
+        file.try_parse().unwrap();
+
+        let result = ValidatedFile::validate(file);
+        assert!(matches!(result, Err(ValidatorError::DuplicateInterface(_))));
+
+        cleanup();
+    }
+
+    #[test]
+    fn test_validate_undefined_schema_ref() {
+        let content = r#"
+            interface Greeter {
+                fn say_hello(User) -> string;
+            }
+        "#;
+        let (path, cleanup) = create_temp_file("undefined_schema_ref", content);
+        let mut file = File::try_new(path).unwrap();
+        file.try_parse().unwrap();
+
+        let result = ValidatedFile::validate(file);
+        assert!(matches!(result, Err(ValidatorError::SchemaNotFound(_))));
+
+        cleanup();
     }
 }

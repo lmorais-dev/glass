@@ -86,9 +86,7 @@ impl Type {
                 }))
             }
             Rule::schema_ident => Ok(Type::Schema(SchemaRef(pair.as_str().to_owned()))),
-            _ => {
-                Err(ParserError::UnexpectedRule(pair.as_rule()))
-            }
+            _ => Err(ParserError::UnexpectedRule(pair.as_rule())),
         }
     }
 

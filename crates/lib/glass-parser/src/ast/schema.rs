@@ -31,14 +31,11 @@ impl Schema {
         };
 
         let mut schema_fields = Vec::new();
-        schema_body_pair
-            .into_inner()
-            .into_iter()
-            .try_for_each(|pair| {
-                let schema_field = SchemaField::try_parse(pair)?;
-                schema_fields.push(schema_field);
-                Ok::<(), ParserError>(())
-            })?;
+        schema_body_pair.into_inner().try_for_each(|pair| {
+            let schema_field = SchemaField::try_parse(pair)?;
+            schema_fields.push(schema_field);
+            Ok::<(), ParserError>(())
+        })?;
 
         Ok(Self {
             name: schema_name,
