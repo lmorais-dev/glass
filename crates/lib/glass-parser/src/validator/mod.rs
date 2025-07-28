@@ -10,9 +10,9 @@ use tracing::{error, info};
 
 #[derive(Debug, Clone)]
 pub struct ValidatedFile {
-    file: File,
-    schema_map: HashMap<SchemaRef, Schema>,
-    interface_map: HashMap<String, Interface>,
+    pub file: File,
+    pub schema_map: HashMap<SchemaRef, Schema>,
+    pub interface_map: HashMap<String, Interface>,
 }
 
 impl ValidatedFile {
