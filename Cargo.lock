@@ -93,6 +93,10 @@ dependencies = [
 [[package]]
 name = "glass-codegen"
 version = "0.1.0"
+dependencies = [
+ "glass-parser",
+ "thiserror",
+]
 
 [[package]]
 name = "glass-parser"
@@ -104,6 +108,10 @@ dependencies = [
  "thiserror",
  "tracing",
 ]
+
+[[package]]
+name = "glass-transport"
+version = "0.1.0"
 
 [[package]]
 name = "itoa"

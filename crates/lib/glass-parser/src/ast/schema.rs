@@ -82,5 +82,5 @@ impl SchemaField {
 
 /// SchemaRef is a way for the [Type] to refer back to a [Schema] without
 /// causing a circular dependency between the types.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SchemaRef(pub String);

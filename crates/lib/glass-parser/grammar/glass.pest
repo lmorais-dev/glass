@@ -18,7 +18,7 @@ vector_type = { "vec" ~ "<" ~ type_decl ~ ">" }
 type_decl = { primitive_type | option_type | vector_type | schema_ident }
 
 // Schemas
-schema_field = { field_ident ~ ":" ~ type_decl ~ ";" }
+schema_field = { field_ident ~ " " ~ type_decl ~ ";" }
 schema_body = { "{" ~ schema_field* ~ "}" }
 schema_decl = { "schema" ~ schema_ident ~ schema_body }
 

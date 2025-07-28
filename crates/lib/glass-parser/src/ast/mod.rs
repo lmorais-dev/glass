@@ -14,6 +14,7 @@ pub mod types;
 ///
 /// This struct holds a crudely parsed AST, meaning it just parses and
 /// exposes the parsed tree without any kind of validation.
+#[derive(Debug, Clone)]
 pub struct File {
     pub path: PathBuf,
     pub interfaces: Vec<Interface>,

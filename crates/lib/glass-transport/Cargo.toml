@@ -1,5 +1,5 @@
 [package]
-name = "glass-codegen"
+name = "glass-transport"
 version = "0.1.0"
 description.workspace = true
 edition.workspace = true
@@ -15,6 +15,3 @@ categories.workspace = true
 keywords.workspace = true
 
 [dependencies]
-glass-parser = { workspace = true }
-
-thiserror = { workspace = true }
