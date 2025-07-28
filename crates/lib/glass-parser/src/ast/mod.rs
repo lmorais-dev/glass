@@ -1,320 +1,208 @@
-use std::fmt;
+use crate::ast::interface::Interface;
+use crate::ast::schema::Schema;
+use crate::parser::{Parser as GlassParser, Rule};
+use crate::prelude::*;
+use pest::Parser;
+use std::path::PathBuf;
+use tracing::{error, info};
 
-/// Represents a span (location) in the source code
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Span {
-    /// Start position (line, column) in the source code
-    pub start: (usize, usize),
-    /// End position (line, column) in the source code
-    pub end: (usize, usize),
+pub mod interface;
+pub mod schema;
+pub mod types;
+
+/// Defines a Glass file
+///
+/// This struct holds a crudely parsed AST, meaning it just parses and
+/// exposes the parsed tree without any kind of validation.
+pub struct File {
+    pub path: PathBuf,
+    pub interfaces: Vec<Interface>,
+    pub schemas: Vec<Schema>,
 }
 
-impl Span {
-    /// Creates a new span with the given start and end positions
-    pub fn new(start: (usize, usize), end: (usize, usize)) -> Self {
-        Self { start, end }
-    }
-
-    /// Creates a fake span (0,0)-(0,0)
-    pub fn dummy() -> Self {
-        Self::new((0, 0), (0, 0))
-    }
-
-    /// Creates a span from a pest span
-    pub fn from_pest(span: pest::Span<'_>) -> Self {
-        let start_pos = span.start_pos().line_col();
-        let end_pos = span.end_pos().line_col();
-        Self::new(start_pos, end_pos)
-    }
-}
-
-/// The root node of the AST representing a complete Glass program
-#[derive(Debug, Clone, PartialEq)]
-pub struct Program {
-    /// Optional package declaration
-    pub package: Option<PackageDecl>,
-    /// List of import statements
-    pub imports: Vec<ImportStmt>,
-    /// List of definitions (services, schemas, enums)
-    pub definitions: Vec<Definition>,
-    /// Source code span
-    pub span: Span,
-}
-
-/// Package declaration defining the namespace for the current file
-#[derive(Debug, Clone, PartialEq)]
-pub struct PackageDecl {
-    /// Package path (e.g., "com.example.project")
-    pub path: PackagePath,
-    /// Source code span
-    pub span: Span,
-}
-
-/// Package path consisting of identifiers separated by dots
-#[derive(Debug, Clone, PartialEq)]
-pub struct PackagePath {
-    /// List of identifiers in the package path
-    pub segments: Vec<String>,
-    /// Source code span
-    pub span: Span,
-}
-
-impl fmt::Display for PackagePath {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.segments.join("."))
-    }
-}
-
-/// Import statement for importing other Glass files
-#[derive(Debug, Clone, PartialEq)]
-pub struct ImportStmt {
-    /// Path to the imported file
-    pub path: String,
-    /// Source code span
-    pub span: Span,
-}
-
-/// Definition of a service, schema, or enum
-#[derive(Debug, Clone, PartialEq)]
-pub enum Definition {
-    /// Service definition
-    Service(ServiceDef),
-    /// Schema definition
-    Schema(SchemaDef),
-    /// Enum definition
-    Enum(EnumDef),
-}
-
-/// Service definition with methods
-#[derive(Debug, Clone, PartialEq)]
-pub struct ServiceDef {
-    /// Service name
-    pub name: String,
-    /// List of service methods
-    pub methods: Vec<ServiceMethod>,
-    /// Source code span
-    pub span: Span,
-}
-
-/// Service method definition
-#[derive(Debug, Clone, PartialEq)]
-pub struct ServiceMethod {
-    /// Method name
-    pub name: String,
-    /// Method parameter with span information
-    pub param: MethodParamWithSpan,
-    /// Method return type with span information
-    pub return_type: MethodReturnWithSpan,
-    /// Source code span
-    pub span: Span,
-}
-
-/// Method parameter type with source location
-#[derive(Debug, Clone, PartialEq)]
-pub struct MethodParamWithSpan {
-    /// The parameter type
-    pub param: MethodParam,
-    /// Source code span
-    pub span: Span,
-}
-
-/// Method parameter type
-#[derive(Debug, Clone, PartialEq)]
-pub enum MethodParam {
-    /// Stream of data
-    Stream(Box<TypeWithSpan>),
-    /// Inline schema
-    InlineSchema(InlineSchema),
-    /// Reference to a schema
-    SchemaRef(SchemaRef),
-}
-
-/// Method return type with source location
-#[derive(Debug, Clone, PartialEq)]
-pub struct MethodReturnWithSpan {
-    /// The return type
-    pub return_type: MethodReturn,
-    /// Source code span
-    pub span: Span,
-}
-
-/// Method return type
-#[derive(Debug, Clone, PartialEq)]
-pub enum MethodReturn {
-    /// Stream of data
-    Stream(Box<TypeWithSpan>),
-    /// Inline schema
-    InlineSchema(InlineSchema),
-    /// Reference to a schema
-    SchemaRef(SchemaRef),
-}
-
-/// Schema definition with fields
-#[derive(Debug, Clone, PartialEq)]
-pub struct SchemaDef {
-    /// Schema name
-    pub name: String,
-    /// List of schema fields
-    pub fields: Vec<SchemaField>,
-    /// Source code span
-    pub span: Span,
-}
-
-/// Schema field definition
-#[derive(Debug, Clone, PartialEq)]
-pub struct SchemaField {
-    /// Field name
-    pub name: String,
-    /// Field type with span information
-    pub field_type: TypeWithSpan,
-    /// Source code span
-    pub span: Span,
-}
-
-/// Enum definition with variants
-#[derive(Debug, Clone, PartialEq)]
-pub struct EnumDef {
-    /// Enum name
-    pub name: String,
-    /// List of enum variants
-    pub variants: Vec<String>,
-    /// Source code span
-    pub span: Span,
-}
-
-/// Inline schema definition
-#[derive(Debug, Clone, PartialEq)]
-pub struct InlineSchema {
-    /// List of inline fields
-    pub fields: Vec<InlineField>,
-    /// Source code span
-    pub span: Span,
-}
-
-/// Inline field definition
-#[derive(Debug, Clone, PartialEq)]
-pub struct InlineField {
-    /// Field name
-    pub name: String,
-    /// Field type with span information
-    pub field_type: TypeWithSpan,
-    /// Source code span
-    pub span: Span,
-}
-
-/// Field type with source location
-#[derive(Debug, Clone, PartialEq)]
-pub struct TypeWithSpan {
-    /// The type
-    pub type_value: Type,
-    /// Source code span
-    pub span: Span,
-}
-
-/// Field type
-#[derive(Debug, Clone, PartialEq)]
-pub enum Type {
-    /// Optional type (Option<T>)
-    Option(Box<TypeWithSpan>),
-    /// Vector type (Vec<T>)
-    Vec(Box<TypeWithSpan>),
-    /// Primitive type
-    Primitive(PrimitiveType),
-    /// Reference to a schema
-    SchemaRef(SchemaRef),
-}
-
-/// Primitive types
-#[derive(Debug, Clone, PartialEq)]
-pub enum PrimitiveType {
-    /// String type
-    String,
-    /// Unsigned integer types
-    U8,
-    U16,
-    U32,
-    U64,
-    U128,
-    /// Signed integer types
-    I8,
-    I16,
-    I32,
-    I64,
-    I128,
-    /// Floating-point types
-    F32,
-    F64,
-    /// Boolean type
-    Bool,
-}
-
-impl fmt::Display for PrimitiveType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            PrimitiveType::String => write!(f, "string"),
-            PrimitiveType::U8 => write!(f, "u8"),
-            PrimitiveType::U16 => write!(f, "u16"),
-            PrimitiveType::U32 => write!(f, "u32"),
-            PrimitiveType::U64 => write!(f, "u64"),
-            PrimitiveType::U128 => write!(f, "u128"),
-            PrimitiveType::I8 => write!(f, "i8"),
-            PrimitiveType::I16 => write!(f, "i16"),
-            PrimitiveType::I32 => write!(f, "i32"),
-            PrimitiveType::I64 => write!(f, "i64"),
-            PrimitiveType::I128 => write!(f, "i128"),
-            PrimitiveType::F32 => write!(f, "f32"),
-            PrimitiveType::F64 => write!(f, "f64"),
-            PrimitiveType::Bool => write!(f, "bool"),
+impl File {
+    pub fn try_new(path: PathBuf) -> ParserResult<Self> {
+        if !path.exists() {
+            let file_path = path.to_str().unwrap_or("unknown");
+            return Err(ParserError::FileNotFound(file_path.to_string()));
         }
+
+        Ok(Self {
+            path,
+            interfaces: vec![],
+            schemas: vec![],
+        })
     }
-}
 
-/// Reference to a schema (can be qualified with package path)
-#[derive(Debug, Clone, PartialEq)]
-pub struct SchemaRef {
-    /// Optional package path
-    pub package: Option<PackagePath>,
-    /// Schema name
-    pub name: String,
-    /// Source code span
-    pub span: Span,
-}
-
-impl fmt::Display for SchemaRef {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Some(package) = &self.package {
-            write!(f, "{}.{}", package, self.name)
-        } else {
-            write!(f, "{}", self.name)
+    #[tracing::instrument(skip(self))]
+    pub fn try_parse(&mut self) -> ParserResult<()> {
+        info!(path = ?self.path, "A parsing job has begun");
+        let contents = self.read_file_contents()?;
+        if contents.is_empty() {
+            return Ok(());
         }
+
+        let pairs = match GlassParser::parse(Rule::file, &contents) {
+            Ok(pairs) => pairs,
+            Err(error) => {
+                error!(path = ?self.path, "Failed to parse the Glass code");
+                return Err(ParserError::Pest(Box::from(error)));
+            }
+        };
+
+        let mut interfaces = vec![];
+        let mut schemas = vec![];
+
+        for pair in pairs {
+            match pair.as_rule() {
+                Rule::file => {
+                    let inner = pair.into_inner();
+                    for pair in inner {
+                        match pair.as_rule() {
+                            Rule::interface_decl => {
+                                let interface = Interface::try_parse(pair)?;
+                                interfaces.push(interface);
+                            }
+                            Rule::schema_decl => {
+                                let schema = Schema::try_parse(pair)?;
+                                schemas.push(schema);
+                            }
+                            Rule::EOI => (),
+                            _ => {
+                                error!(path = ?self.path, "Unexpected rule: {:?}", pair.as_rule());
+                                return Err(ParserError::UnexpectedRule(pair.as_rule()));
+                            }
+                        }
+                    }
+                }
+                Rule::EOI => (),
+                _ => {
+                    error!(path = ?self.path, "Unexpected rule: {:?}", pair.as_rule());
+                    return Err(ParserError::UnexpectedRule(pair.as_rule()));
+                }
+            }
+        }
+
+        self.interfaces = interfaces;
+        self.schemas = schemas;
+
+        Ok(())
+    }
+
+    #[tracing::instrument(skip(self))]
+    fn read_file_contents(&self) -> ParserResult<String> {
+        // If we are calling this, then we already validated that the file at least exists.
+        // So it should be fine to just try reading from it.
+        std::fs::read_to_string(&self.path).map_err(|error| {
+            error!(?error, path = ?self.path, "Failed to read the specified file");
+            ParserError::Io(error)
+        })
     }
 }
 
-/// Parse a string into a primitive type
-pub fn parse_primitive_type(s: &str) -> Option<PrimitiveType> {
-    match s {
-        "string" => Some(PrimitiveType::String),
-        "u8" => Some(PrimitiveType::U8),
-        "u16" => Some(PrimitiveType::U16),
-        "u32" => Some(PrimitiveType::U32),
-        "u64" => Some(PrimitiveType::U64),
-        "u128" => Some(PrimitiveType::U128),
-        "i8" => Some(PrimitiveType::I8),
-        "i16" => Some(PrimitiveType::I16),
-        "i32" => Some(PrimitiveType::I32),
-        "i64" => Some(PrimitiveType::I64),
-        "i128" => Some(PrimitiveType::I128),
-        "f32" => Some(PrimitiveType::F32),
-        "f64" => Some(PrimitiveType::F64),
-        "bool" => Some(PrimitiveType::Bool),
-        _ => None,
-    }
-}
+#[cfg(test)]
+mod tests {
+    use crate::ast::interface::{FunctionParam, FunctionReturn};
+    use crate::ast::types::{PrimitiveType, Type};
+    use crate::prelude::*;
+    use std::fs::File as StdFile;
+    use std::io::Write;
+    use std::path::PathBuf;
+    use tempfile::Builder;
 
-/// Parse a string into a primitive type with span information
-pub fn parse_primitive_type_with_span(s: &str, span: Span) -> Option<TypeWithSpan> {
-    parse_primitive_type(s).map(|primitive_type| TypeWithSpan {
-        type_value: Type::Primitive(primitive_type),
-        span,
-    })
+    /// Helper to create a named temporary file with specific content.
+    fn create_temp_file(prefix: &str, content: &str) -> (PathBuf, impl FnOnce()) {
+        let temp_dir = Builder::new().prefix(prefix).tempdir().unwrap();
+        let file_path = temp_dir.path().join("test.glass");
+        let mut file = StdFile::create(&file_path).unwrap();
+        file.write_fmt(format_args!("{content}")).unwrap();
+
+        let path_buf = file_path.to_path_buf();
+        let cleanup = move || temp_dir.close().unwrap();
+
+        (path_buf, cleanup)
+    }
+
+    #[test]
+    fn test_file_try_new_not_found() {
+        let path = PathBuf::from("non_existent_file.glass");
+        let result = File::try_new(path);
+        assert!(matches!(result, Err(ParserError::FileNotFound(_))));
+    }
+
+    #[test]
+    fn test_parse_empty_file() {
+        let (path, cleanup) = create_temp_file("empty", "");
+        let mut file = File::try_new(path).unwrap();
+        let result = file.try_parse();
+
+        assert!(result.is_ok());
+        assert!(file.schemas.is_empty());
+        assert!(file.interfaces.is_empty());
+
+        cleanup();
+    }
+
+    #[test]
+    fn test_parse_syntax_error() {
+        let (path, cleanup) = create_temp_file("syntax_error", "schema Oops { id: u64 ");
+        let mut file = File::try_new(path).unwrap();
+        let result = file.try_parse();
+
+        assert!(matches!(result, Err(ParserError::Pest(_))));
+
+        cleanup();
+    }
+
+    #[test]
+    fn test_full_file_parse_success() {
+        let content = r#"
+            schema User {
+                id: u64;
+                name: string;
+            }
+
+            interface Greeter {
+                fn say_hello(User) -> option<string>;
+                fn logout(User);
+            }
+        "#;
+        let (path, cleanup) = create_temp_file("full_parse", content);
+        let mut file = File::try_new(path).unwrap();
+        let result = file.try_parse();
+
+        // 1. Assert parsing was successful
+        assert!(result.is_ok());
+
+        // 2. Assert schemas were parsed correctly
+        assert_eq!(file.schemas.len(), 1);
+        let schema = &file.schemas[0];
+        assert_eq!(schema.name, "User");
+        assert_eq!(schema.fields.len(), 2);
+        assert_eq!(schema.fields[0].name, "id");
+        assert_eq!(schema.fields[0].ty, Type::Primitive(PrimitiveType::U64));
+
+        // 3. Assert interfaces were parsed correctly
+        assert_eq!(file.interfaces.len(), 1);
+        let interface = &file.interfaces[0];
+        assert_eq!(interface.name, "Greeter");
+        assert_eq!(interface.functions.len(), 2);
+
+        let say_hello = &interface.functions[0];
+        assert_eq!(say_hello.name, "say_hello");
+        assert!(matches!(
+            say_hello.param,
+            FunctionParam::Simple(Type::Schema(_))
+        ));
+        assert!(matches!(
+            say_hello.return_type,
+            Some(FunctionReturn::Simple(Type::Option(_)))
+        ));
+
+        let logout = &interface.functions[1];
+        assert_eq!(logout.name, "logout");
+        assert!(logout.return_type.is_none());
+
+        cleanup();
+    }
 }

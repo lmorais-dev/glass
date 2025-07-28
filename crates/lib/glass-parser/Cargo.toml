@@ -14,14 +14,11 @@ license.workspace = true
 categories.workspace = true
 keywords.workspace = true
 
-[features]
-full = ["ast", "parsing", "type-tree"]
-ast = ["dep:pest"]
-parsing = ["ast", "dep:pest", "dep:pest_derive"]
-type-tree = ["ast"]
-
 [dependencies]
-pest = { workspace = true, optional = true }
-pest_derive = { workspace = true, optional = true }
+pest = { workspace = true }
+pest_derive = { workspace = true }
+
+tracing = { workspace = true }
 
 thiserror = { workspace = true }
+tempfile = { workspace = true }

@@ -1,28 +1,19 @@
-#[cfg(feature = "parsing")]
-use pest::error::Error as PestError;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum ParserError {
-    #[cfg(feature = "parsing")]
-    #[error("Pest parsing error: {0}")]
-    PestError(#[from] Box<PestError<crate::parser::Rule>>),
+    #[error("The specified file was not found: {0}")]
+    FileNotFound(String),
 
-    #[error("Invalid primitive type: {0}")]
-    InvalidPrimitiveType(String),
+    #[error("The specified file was not a valid glass file: {0:?}")]
+    UnexpectedRule(crate::parser::Rule),
 
-    #[error("Expected {expected} rule but found {found}")]
-    UnexpectedRule { expected: String, found: String },
+    #[error("The next token was not found")]
+    NoNextToken,
 
-    #[error("Missing required element: {0}")]
-    MissingElement(String),
+    #[error("An IO operation failed: {0}")]
+    Io(#[from] std::io::Error),
 
-    #[error("Invalid syntax: {0}")]
-    InvalidSyntax(String),
-
-    #[error("Schema reference error: {details}")]
-    SchemaReferenceError {
-        details: String,
-        reference: Option<String>,
-    },
+    #[error("A pest parsing error occurred: {0}")]
+    Pest(#[from] Box<pest::error::Error<crate::parser::Rule>>),
 }

@@ -1,0 +1,36 @@
+// Commons
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+COMMENT = _{ "///" ~ (!"\n" ~ ANY)* }
+
+// Identifiers
+pascal_case_ident = @{ ASCII_ALPHA_UPPER ~ ASCII_ALPHANUMERIC* }
+snake_case_ident = @{ ASCII_ALPHA_LOWER ~ (ASCII_ALPHA_LOWER | ASCII_DIGIT | "_")* }
+
+interface_ident = { pascal_case_ident }
+schema_ident = { pascal_case_ident }
+function_ident = { snake_case_ident }
+field_ident = { snake_case_ident }
+
+// Types
+primitive_type = { "string" | "u8" | "u16" | "u32" | "u64" | "u128" | "i8" | "i16" | "i32" | "i64" | "i128" | "f32" | "f64" | "bool" }
+option_type = { "option" ~ "<" ~ type_decl ~ ">" }
+vector_type = { "vec" ~ "<" ~ type_decl ~ ">" }
+type_decl = { primitive_type | option_type | vector_type | schema_ident }
+
+// Schemas
+schema_field = { field_ident ~ ":" ~ type_decl ~ ";" }
+schema_body = { "{" ~ schema_field* ~ "}" }
+schema_decl = { "schema" ~ schema_ident ~ schema_body }
+
+// Interfaces
+stream_decl = { "stream" ~ type_decl }
+
+function_param = { "(" ~ (stream_decl | type_decl) ~ ")" }
+function_return = { "->" ~ (stream_decl | type_decl) }
+function_decl = { "fn" ~ function_ident ~ function_param ~ function_return? ~ ";" }
+
+interface_body = { "{" ~ function_decl* ~ "}" }
+interface_decl = { "interface" ~ interface_ident ~ interface_body }
+
+// Root Rule
+file = { SOI ~ (schema_decl | interface_decl)* ~ EOI }
