@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = [ "crates/bin/glass-shard", "crates/bin/glass-test", "crates/lib/glass-codegen","crates/lib/glass-parser", "crates/lib/glass-transport"]
+members = [ "crates/bin/glass-shard", "crates/lib/glass-codegen","crates/lib/glass-parser", "crates/lib/glass-transport"]
 
 [workspace.package]
 description = "Glass is a next-generation blazingly fast RPC framework powered by QUIC"
