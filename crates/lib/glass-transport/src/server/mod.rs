@@ -1,7 +1,7 @@
 use crate::security::error::SecurityError;
 use crate::security::tls::TlsStore;
 use crate::server::error::ServerError;
-use crate::server::handler::RouterFn;
+use crate::server::handler::TypedHandler;
 use quinn::VarInt;
 use quinn::crypto::rustls::QuicServerConfig;
 use std::sync::Arc;
@@ -17,7 +17,7 @@ pub struct Server;
 impl Server {
     pub async fn serve(
         server_config: &config::ServerConfig,
-        router: RouterFn,
+        handler: TypedHandler,
     ) -> Result<(), ServerError> {
         let (certificate, key) = TlsStore::try_load(
             &server_config.security.tls_certificate,
@@ -56,7 +56,7 @@ impl Server {
         let quinn_endpoint =
             quinn::Endpoint::server(quinn_server_config, server_config.http.bind_address)?;
 
-        let handler = handler::SessionHandler::new(router);
+        let handler = handler::SessionHandler::new(handler);
 
         while let Some(incoming_connection) = quinn_endpoint.accept().await {
             // We move the QUIC connection to its own task so to not block when waiting

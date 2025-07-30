@@ -711,6 +711,7 @@ dependencies = [
 name = "glass-testing"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "color-eyre",
  "glass-transport",
  "rustls",

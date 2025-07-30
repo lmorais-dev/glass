@@ -1,14 +1,14 @@
+use async_trait::async_trait;
 use glass_transport::message::Message;
 use glass_transport::server;
 use glass_transport::server::config::{ServerHttpConfig, ServerSecurityConfig};
 use glass_transport::server::error::ServerError;
-use glass_transport::server::handler::RouterFn;
+use glass_transport::server::handler::{Handler, TypedHandler};
 use std::path::PathBuf;
 use std::sync::Arc;
-use tracing::info;
-use tracing_subscriber::Layer;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
+use tracing_subscriber::Layer;
 
 #[tokio::main]
 async fn main() -> color_eyre::Result<()> {
@@ -34,14 +34,19 @@ async fn main() -> color_eyre::Result<()> {
         },
     };
 
-    let route_fn: RouterFn = Arc::new(Box::new(|message| Box::pin(route_message(message))));
+    let router: TypedHandler = Arc::new(Box::new(Router));
 
-    server::Server::serve(&server_config, route_fn).await?;
+    server::Server::serve(&server_config, router).await?;
 
     Ok(())
 }
 
-async fn route_message(message: Message) -> Result<Message, ServerError> {
-    info!("reached the router");
-    Ok(message)
+#[derive(Clone)]
+pub struct Router;
+
+#[async_trait]
+impl Handler for Router {
+    async fn handle(&self, message: Message) -> Result<Message, ServerError> {
+        Ok(message)
+    }
 }

@@ -1,6 +1,7 @@
 use crate::message::Message;
 use crate::message::types::MessageType;
 use crate::server::error::ServerError;
+use async_trait::async_trait;
 use h3::ext::Protocol;
 use h3::quic;
 use h3::server::Connection;
@@ -8,28 +9,26 @@ use h3_webtransport::server::AcceptedBi::BidiStream;
 use h3_webtransport::server::WebTransportSession;
 use h3_webtransport::stream::{RecvStream, SendStream};
 use http::Method;
-use std::pin::Pin;
 use std::sync::Arc;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio_util::bytes::Bytes;
 use tracing::{debug, error, info};
 
-pub type RouterFn = Arc<
-    Box<
-        dyn Fn(Message) -> Pin<Box<dyn Future<Output = Result<Message, ServerError>> + Send + Sync>>
-            + Send
-            + Sync,
-    >,
->;
+#[async_trait]
+pub trait Handler {
+    async fn handle(&self, message: Message) -> Result<Message, ServerError>;
+}
+
+pub type TypedHandler = Arc<Box<dyn Handler + Send + Sync>>;
 
 #[derive(Clone)]
 pub struct SessionHandler {
-    router_fn: RouterFn,
+    handler: TypedHandler,
 }
 
 impl SessionHandler {
-    pub fn new(router_fn: RouterFn) -> Self {
-        Self { router_fn }
+    pub fn new(handler: TypedHandler) -> Self {
+        Self { handler }
     }
 
     pub async fn handle_h3(
@@ -73,9 +72,11 @@ impl SessionHandler {
                                 }
                             };
 
-                            let router_fn = self.router_fn.clone();
+                            let handler_clone = self.handler.clone();
                             tokio::spawn(async move {
-                                if let Err(error) = Self::handle_session(session, router_fn).await {
+                                if let Err(error) =
+                                    Self::handle_session(session, handler_clone).await
+                                {
                                     debug!(?error, "Failed to handle WebTransport session");
                                 }
                             });
@@ -100,13 +101,13 @@ impl SessionHandler {
 
     async fn handle_session(
         session: WebTransportSession<h3_quinn::Connection, Bytes>,
-        router_fn: RouterFn,
+        handler: TypedHandler,
     ) -> Result<(), ServerError> {
         loop {
             let bidi_stream = session.accept_bi().await;
             if let Some(BidiStream(_, stream)) = bidi_stream? {
                 let (mut send, mut recv) = quic::BidiStream::split(stream);
-                let router_fn_clone = router_fn.clone();
+                let handler = handler.clone();
 
                 tokio::spawn(async move {
                     loop {
@@ -120,7 +121,7 @@ impl SessionHandler {
 
                         match message.message_type {
                             MessageType::DataStream => {
-                                let response = match router_fn_clone(message).await {
+                                let response = match handler.handle(message).await {
                                     Ok(response) => response,
                                     Err(error) => {
                                         debug!(?error, "Failed to handle a message");
