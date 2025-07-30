@@ -15,3 +15,28 @@ categories.workspace = true
 keywords.workspace = true
 
 [dependencies]
+quinn = { workspace = true }
+h3 = { workspace = true }
+h3-quinn = { workspace = true }
+h3-webtransport = { workspace = true }
+http = { workspace = true }
+
+serde = { workspace = true }
+ciborium = { workspace = true }
+
+rustls = { workspace = true }
+blake3 = { workspace = true }
+ulid = { workspace = true }
+
+brotli = { workspace = true }
+
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+tokio-stream = { workspace = true }
+
+color-eyre = { workspace = true }
+thiserror = { workspace = true }
+async-trait = { workspace = true }

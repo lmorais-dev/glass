@@ -1,0 +1,27 @@
+[package]
+name = "glass-testing"
+version = "0.1.0"
+description.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+readme.workspace = true
+publish.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+license.workspace = true
+categories.workspace = true
+keywords.workspace = true
+
+[dependencies]
+glass-transport = { path = "../../lib/glass-transport" }
+
+rustls = { workspace = true }
+
+tokio = { workspace = true }
+
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true}
+
+color-eyre = { workspace = true }
