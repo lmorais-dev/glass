@@ -1,3 +1,3 @@
 pub mod message;
-pub mod server;
 pub mod security;
+pub mod server;

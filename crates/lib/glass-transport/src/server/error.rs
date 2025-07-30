@@ -1,3 +1,4 @@
+use crate::message::status::Status;
 use crate::security::error::SecurityError;
 use h3::error::StreamError;
 use thiserror::Error;
@@ -18,6 +19,9 @@ pub enum ServerError {
 
     #[error("Failed to send a message")]
     Sender,
+
+    #[error("Failed with status: {0:#?}")]
+    Status(Status),
 
     #[error("H3 stream error: {0}")]
     Stream(#[from] StreamError),

@@ -1,20 +1,24 @@
 use crate::security::error::SecurityError;
 use crate::security::tls::TlsStore;
 use crate::server::error::ServerError;
+use crate::server::handler::RouterFn;
+use quinn::VarInt;
 use quinn::crypto::rustls::QuicServerConfig;
 use std::sync::Arc;
 use std::time::Duration;
-use quinn::VarInt;
 use tracing::debug;
 
 pub mod config;
-mod error;
-mod handler;
+pub mod error;
+pub mod handler;
 
 pub struct Server;
 
 impl Server {
-    pub async fn serve(server_config: &config::ServerConfig) -> Result<(), ServerError> {
+    pub async fn serve(
+        server_config: &config::ServerConfig,
+        router: RouterFn,
+    ) -> Result<(), ServerError> {
         let (certificate, key) = TlsStore::try_load(
             &server_config.security.tls_certificate,
             &server_config.security.tls_private_key,
@@ -52,9 +56,12 @@ impl Server {
         let quinn_endpoint =
             quinn::Endpoint::server(quinn_server_config, server_config.http.bind_address)?;
 
+        let handler = handler::SessionHandler::new(router);
+
         while let Some(incoming_connection) = quinn_endpoint.accept().await {
             // We move the QUIC connection to its own task so to not block when waiting
             // for the handshake to finish and actually return the connection object
+            let handler_clone = handler.clone();
             tokio::spawn(async move {
                 match incoming_connection.await {
                     Ok(connection) => {
@@ -79,7 +86,7 @@ impl Server {
                             }
                         };
 
-                        if let Err(error) = handler::handle_h3(h3_connection).await {
+                        if let Err(error) = handler_clone.handle_h3(h3_connection).await {
                             debug!(?error, "Failed to handle a connection");
                         }
                     }

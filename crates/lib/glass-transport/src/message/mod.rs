@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+pub mod status;
 pub mod types;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -15,6 +16,5 @@ pub struct Message {
 pub struct ControlMessage {
     operation: types::ControlOperationType,
     service: String,
-    function: String
+    function: String,
 }
-

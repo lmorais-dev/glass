@@ -1,2 +1,2 @@
-pub mod prelude;
 pub mod generator;
+pub mod prelude;
